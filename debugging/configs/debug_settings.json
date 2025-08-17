@@ -1,0 +1,44 @@
+{
+  "logging": {
+    "level": "INFO",
+    "file_path": "debugging/logs/",
+    "max_size_mb": 50,
+    "backup_count": 5,
+    "enable_console": true,
+    "enable_file": true
+  },
+  "performance": {
+    "enable_profiling": false,
+    "memory_monitoring": true,
+    "execution_timing": true,
+    "max_cluster_size": 30000
+  },
+  "testing": {
+    "sample_size": 1000,
+    "test_data_path": "debugging/tests/",
+    "golden_reference_test": "debugging/tests/test_golden_reference.xlsx"
+  },
+  "ui_debug": {
+    "enable_debug_mode": true,
+    "show_processing_details": true,
+    "log_user_actions": false,
+    "enable_crash_reports": true
+  },
+  "modules": {
+    "doctor_cleaner": {
+      "status": "active",
+      "version": "2.0",
+      "debug_level": "INFO"
+    },
+    "reports_module": {
+      "status": "planned",
+      "version": "0.1",
+      "debug_level": "DEBUG"
+    },
+    "analytics_module": {
+      "status": "planned",
+      "version": "0.1",
+      "debug_level": "DEBUG"
+    }
+  }
+}

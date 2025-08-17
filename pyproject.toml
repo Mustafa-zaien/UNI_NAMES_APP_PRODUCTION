@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uni-names"
+version = "2.0.0"
+description = "University Names Unification System - fast, modular name matching and deduplication"
+readme = "README.md"
+authors = [{ name = "Mustafa Zainhom Mahmoud", email = "mustafazainhom@gmail.com" }]
+requires-python = ">=3.9"
+keywords = ["names", "deduplication", "matching", "healthcare", "arabic", "pyqt6"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Text Processing :: Linguistic",
+]
+
+# Keep runtime deps minimal to avoid breaking the current environment
+# Existing project already manages requirements.txt
+dependencies = []
+
+[project.optional-dependencies]
+speed = [
+  "rapidfuzz>=3.0.0",
+  "pyarrow>=13.0.0",
+  "diskcache>=5.6.0",
+]
+
+gui = [
+  "PyQt6>=6.4.0",
+]
+
+dev = [
+  "pytest>=7.0",
+  "pytest-benchmark>=4.0.0",
+  "black>=23.0.0",
+  "ruff>=0.3.0",
+  "mypy>=1.7.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["uni_names*"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-q"
+pythonpath = ["src"]
