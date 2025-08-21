@@ -1,0 +1,9 @@
+{
+  "app_name": "UniNames Medical Suite",
+  "version": "2.1.0-OFFLINE",
+  "build_date": "2025-08-21T11:20:14.999071",
+  "theme": "dark",
+  "auto_updater_enabled": false,
+  "debug_mode": false,
+  "offline_mode": true
+}

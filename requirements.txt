@@ -16,3 +16,5 @@ rapidfuzz>=3.0,<4
 
 # (Optional) For building EXE locally only
 # pyinstaller>=6.3,<7
+fuzzywuzzy==0.18.0
+python-Levenshtein==0.21.1

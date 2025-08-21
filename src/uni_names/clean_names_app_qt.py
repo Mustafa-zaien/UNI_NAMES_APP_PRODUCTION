@@ -52,13 +52,11 @@ class ProcessRunner(QtCore.QObject):
         arguments = args[1:]
         if working_dir:
             self.process.setWorkingDirectory(working_dir)
-        
         if env:
             env_vars = QtCore.QProcessEnvironment()
             for key, value in env.items():
                 env_vars.insert(key, value)
             self.process.setProcessEnvironment(env_vars)
-            
         self.process.start(program, arguments)
 
     def stop(self):
@@ -69,10 +67,13 @@ class UniNameWidget(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Uni Name - Enhanced Medical Processing")
-        
-        # ✅ Settings without dark mode flag
+
+        # Settings مع حفظ حالة الوضع
         self.settings = QtCore.QSettings()
         
+        # Theme state - الافتراضي الوضع الداكن
+        self.is_dark_mode = self.settings.value("dark_mode", True, bool)
+
         # ✅ Main layout responsive
         main_layout = QtWidgets.QVBoxLayout(self)
         main_layout.setContentsMargins(16, 16, 16, 16)
@@ -83,16 +84,16 @@ class UniNameWidget(QtWidgets.QWidget):
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        
+
         # Main content widget
         content_widget = QtWidgets.QWidget()
         root = QtWidgets.QVBoxLayout(content_widget)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(16)
 
-        # === Header (TopBar) === 
+        # === Header (TopBar) ===
         self._create_header(root)
-        
+
         # === Stats chips row ===
         self._create_stats_section(root)
 
@@ -114,12 +115,14 @@ class UniNameWidget(QtWidgets.QWidget):
 
         # === Initialize runners ===
         self._init_runners()
+        
+        # تطبيق الوضع المحفوظ عند بدء التطبيق
+        self.apply_theme()
 
     def _create_header(self, root):
         """إنشاء الـ header"""
         self.header = QtWidgets.QFrame()
         self.header.setObjectName("TopBar")
-        
         h = QtWidgets.QHBoxLayout(self.header)
         h.setContentsMargins(24, 20, 24, 20)
         h.setSpacing(20)
@@ -127,31 +130,42 @@ class UniNameWidget(QtWidgets.QWidget):
         # Title section
         title_section = QtWidgets.QVBoxLayout()
         title_section.setSpacing(6)
-        
-        # ✅ فقط setObjectName - لا setStyleSheet
+
         self.title = QtWidgets.QLabel("Doctors Name Processing")
         self.title.setObjectName("HeaderTitle")
-        
+
         self.subtitle = QtWidgets.QLabel("Smart cleaning, clustering and golden-reference learning")
         self.subtitle.setObjectName("HeaderSubtitle")
-        
+
         title_section.addWidget(self.title)
         title_section.addWidget(self.subtitle)
         h.addLayout(title_section, 1)
+
+        # Right section with theme toggle and avatar
+        right_section = QtWidgets.QHBoxLayout()
+        right_section.setSpacing(16)
+        
+        # Theme toggle button
+        self.theme_btn = QtWidgets.QPushButton("🌙")
+        self.theme_btn.setObjectName("ThemeToggle")
+        self.theme_btn.setFixedSize(40, 40)
+        self.theme_btn.setToolTip("تبديل بين الوضع الفاتح والداكن")
+        self.theme_btn.clicked.connect(self.toggle_theme)
+        right_section.addWidget(self.theme_btn)
 
         # Avatar
         self.avatar = QtWidgets.QToolButton()
         self.avatar.setObjectName("Avatar")
         self.avatar.setText("UNI")
-        h.addWidget(self.avatar)
-
+        right_section.addWidget(self.avatar)
+        
+        h.addLayout(right_section)
         root.addWidget(self.header)
 
     def _create_stats_section(self, root):
         """إنشاء قسم الإحصائيات"""
         stats_frame = QtWidgets.QFrame()
         stats_frame.setObjectName("GlassyBar")
-        
         stats_layout = QtWidgets.QGridLayout(stats_frame)
         stats_layout.setContentsMargins(20, 16, 20, 16)
         stats_layout.setSpacing(16)
@@ -159,24 +173,23 @@ class UniNameWidget(QtWidgets.QWidget):
         def make_chip(caption: str, col: int) -> QtWidgets.QFrame:
             chip = QtWidgets.QFrame()
             chip.setObjectName("GlassChip")
-            
             lay = QtWidgets.QVBoxLayout(chip)
             lay.setContentsMargins(18, 14, 18, 14)
             lay.setSpacing(8)
-            
+
             # ✅ فقط setObjectName - لا setStyleSheet
             cap = QtWidgets.QLabel(caption)
             cap.setObjectName("ChipCaption")
             cap.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-            
+
             val = QtWidgets.QLabel("0")
             val.setObjectName("ChipValue")
             val.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-            
             chip._value_label = val
+
             lay.addWidget(cap)
             lay.addWidget(val)
-            
+
             # Add to grid layout
             stats_layout.addWidget(chip, 0, col)
             return chip
@@ -200,11 +213,10 @@ class UniNameWidget(QtWidgets.QWidget):
         """إنشاء قسم النموذج"""
         form_frame = QtWidgets.QFrame()
         form_frame.setObjectName("Panel")
-        
         form_layout = QtWidgets.QVBoxLayout(form_frame)
         form_layout.setContentsMargins(24, 24, 24, 24)
         form_layout.setSpacing(18)
-        
+
         # Base directories
         self.base_dir = Path(__file__).resolve().parent
         self.project_root = Path(__file__).resolve().parent.parent.parent
@@ -242,9 +254,10 @@ class UniNameWidget(QtWidgets.QWidget):
         self.threshold_spin.setSingleStep(0.01)
         self.threshold_spin.setValue(0.70)
         threshold_layout.addWidget(self.threshold_spin)
-        threshold_layout.addStretch(1)
 
+        threshold_layout.addStretch(1)
         form_layout.addWidget(threshold_widget)
+
         root.addWidget(form_frame)
 
     def _create_form_row(self, label_text: str, placeholder: str, btn_text: str, btn_callback) -> QtWidgets.QWidget:
@@ -300,7 +313,6 @@ class UniNameWidget(QtWidgets.QWidget):
         """إنشاء قسم التقدم"""
         progress_frame = QtWidgets.QFrame()
         progress_frame.setObjectName("Panel")
-        
         progress_layout = QtWidgets.QVBoxLayout(progress_frame)
         progress_layout.setContentsMargins(24, 20, 24, 20)
         progress_layout.setSpacing(16)
@@ -336,24 +348,25 @@ class UniNameWidget(QtWidgets.QWidget):
         update_layout.addWidget(self.progress_update, 1)
 
         progress_layout.addWidget(update_widget)
+
         root.addWidget(progress_frame)
 
     def _create_log_section(self, root):
         """إنشاء قسم السجل"""
         log_frame = QtWidgets.QFrame()
         log_frame.setObjectName("Panel")
-        
         log_layout = QtWidgets.QVBoxLayout(log_frame)
         log_layout.setContentsMargins(20, 20, 20, 20)
         log_layout.setSpacing(16)
 
         # Log header
         log_header = QtWidgets.QHBoxLayout()
-        
+
         # ✅ فقط setObjectName - لا setStyleSheet
         log_title = QtWidgets.QLabel("Processing Log")
         log_title.setObjectName("PanelTitle")
         log_header.addWidget(log_title)
+
         log_header.addStretch(1)
 
         clear_btn = QtWidgets.QPushButton("🗑️ Clear")
@@ -366,16 +379,17 @@ class UniNameWidget(QtWidgets.QWidget):
         # Log area
         self.log = QtWidgets.QTextEdit()
         self.log.setReadOnly(True)
-        
+
         # ✅ Font setup without hardcoded sizes
         font = QtGui.QFont("JetBrains Mono")
         if not font.exactMatch():
             font = QtGui.QFont("Consolas")
-        if not font.exactMatch():
-            font = QtGui.QFont("Courier New")
+            if not font.exactMatch():
+                font = QtGui.QFont("Courier New")
         self.log.setFont(font)
-        
+
         log_layout.addWidget(self.log, 1)
+
         root.addWidget(log_frame)
 
     def _init_runners(self):
@@ -394,10 +408,84 @@ class UniNameWidget(QtWidgets.QWidget):
         self.gold_runner.stdout.connect(self.append_stdout)
         self.gold_runner.stderr.connect(self.append_stderr)
 
+    # ===== Theme Methods =====
+    def toggle_theme(self):
+        """تبديل بين الوضع الفاتح والداكن"""
+        self.is_dark_mode = not self.is_dark_mode
+        self.settings.setValue("dark_mode", self.is_dark_mode)
+        self.apply_theme()
+
+    def apply_theme(self):
+        """تطبيق الوضع المحدد"""
+        app = QtWidgets.QApplication.instance()
+        if not app:
+            return
+            
+        # قراءة الملف المناسب
+        if self.is_dark_mode:
+            style_file = Path(__file__).resolve().parent / "style.qss"
+            self.theme_btn.setText("🌙")
+            self.theme_btn.setToolTip("التبديل للوضع الفاتح")
+        else:
+            style_file = Path(__file__).resolve().parent / "light_style.qss"
+            self.theme_btn.setText("☀️")
+            self.theme_btn.setToolTip("التبديل للوضع الداكن")
+        
+        # تطبيق الستايل مع الـ tokens
+        self.load_and_apply_style(style_file)
+
+    def load_and_apply_style(self, style_file):
+        """تحميل وتطبيق الستايل مع الـ dynamic tokens"""
+        try:
+            with open(style_file, 'r', encoding='utf-8') as f:
+                style_content = f.read()
+            
+            # Dynamic tokens for responsive design
+            tokens = {
+                "FS_BASE": "13px",
+                "FS_SMALL": "11px", 
+                "FS_MEDIUM": "14px",
+                "FS_LARGE": "16px",
+                "FS_TITLE": "20px",
+                "FS_HEADER": "24px",
+                "FS_NUMBER": "20px",
+                "BR_SM": "4px",
+                "BR_MD": "8px",
+                "BR_LG": "12px", 
+                "BR_XL": "16px",
+                "BR_PILL": "20px",
+                "PD_XS": "4px",
+                "PD_SM": "6px",
+                "PD_MD": "10px",
+                "PD_LG": "16px",
+                "PD_XL": "20px",
+                "MG_XS": "2px",
+                "MG_SM": "4px",
+                "MG_MD": "8px",
+                "MG_LG": "12px",
+                "SZ_BTN_H": "32px",
+                "SZ_ICON_XL": "48px",
+                "SZ_PROGRESS_H": "6px",
+                "SZ_SCROLL_W": "8px",
+                "W_BTN_MD": "120px"
+            }
+            
+            # Replace tokens
+            for token, value in tokens.items():
+                style_content = style_content.replace(f"{{{{{token}}}}}", value)
+            
+            # Apply to application
+            app = QtWidgets.QApplication.instance()
+            if app:
+                app.setStyleSheet(style_content)
+                
+        except Exception as e:
+            print(f"خطأ في تحميل الستايل: {e}")
+
     # ===== File picker methods =====
     def browse_input(self):
         fn, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, "Choose input Excel", str(Path.home()), 
+            self, "Choose input Excel", str(Path.home()),
             "Excel files (*.xlsx *.xls);;All files (*.*)"
         )
         if fn:
@@ -405,7 +493,7 @@ class UniNameWidget(QtWidgets.QWidget):
 
     def browse_output(self):
         fn, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self, "Choose output path", str(Path.home()), 
+            self, "Choose output path", str(Path.home()),
             "Excel (*.xlsx)"
         )
         if fn:
@@ -415,7 +503,7 @@ class UniNameWidget(QtWidgets.QWidget):
 
     def browse_golden(self):
         fn, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, "Choose golden reference", str(Path.home()), 
+            self, "Choose golden reference", str(Path.home()),
             "Excel/CSV (*.xlsx *.xls *.csv);;All files (*.*)"
         )
         if fn:
@@ -423,7 +511,7 @@ class UniNameWidget(QtWidgets.QWidget):
 
     def browse_new_aliases(self):
         fn, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self, "Where to save new aliases", str(Path.home()), 
+            self, "Where to save new aliases", str(Path.home()),
             "Excel (*.xlsx)"
         )
         if fn:
@@ -433,7 +521,7 @@ class UniNameWidget(QtWidgets.QWidget):
 
     def browse_reviewed(self):
         fn, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, "Choose reviewed file", str(Path.home()), 
+            self, "Choose reviewed file", str(Path.home()),
             "Excel/CSV (*.xlsx *.xls *.csv);;All files (*.*)"
         )
         if fn:
@@ -452,7 +540,6 @@ class UniNameWidget(QtWidgets.QWidget):
     def _append_log(self, text: str, error: bool = False):
         if not text:
             return
-        
         color = QtGui.QColor('#fca5a5' if error else '#e2e8f0')
         self.log.setTextColor(color)
         self.log.moveCursor(QtGui.QTextCursor.MoveOperation.End)
@@ -493,18 +580,19 @@ class UniNameWidget(QtWidgets.QWidget):
         if not in_path:
             QtWidgets.QMessageBox.critical(self, "Missing Input", "Please choose an input Excel file.")
             return
+
         if not out_path:
             QtWidgets.QMessageBox.critical(self, "Missing Output", "Please choose an output Excel path.")
             return
 
         cli_script = self.project_root / "doctor_cleaner" / "cli.py"
-        
+
         self.append_stdout("=" * 50 + "\n")
         self.append_stdout("🔧 DEBUG INFO:\n")
-        self.append_stdout(f"   • CLI script: {cli_script}\n")
-        self.append_stdout(f"   • CLI exists: {cli_script.exists()}\n")
+        self.append_stdout(f" • CLI script: {cli_script}\n")
+        self.append_stdout(f" • CLI exists: {cli_script.exists()}\n")
         self.append_stdout("=" * 50 + "\n\n")
-        
+
         if not cli_script.exists():
             self.append_stderr(f"❌ CLI script not found at: {cli_script}\n")
             QtWidgets.QMessageBox.critical(self, "File Error", f"CLI script not found: {cli_script}")
@@ -515,27 +603,30 @@ class UniNameWidget(QtWidgets.QWidget):
                 "--input", in_path,
                 "--output", out_path,
                 "--threshold", str(thr)]
+
         if golden_path:
             args += ["--golden", golden_path]
+
         if new_aliases:
             args += ["--new-aliases-out", new_aliases]
 
         self.append_stdout(f"🚀 COMMAND: {' '.join(args[:5])}...\n\n")
         self.append_stdout("🟢 Starting processing...\n")
         self.append_stdout("=" * 50 + "\n")
-        
+
         env = os.environ.copy()
         env['PYTHONPATH'] = str(self.project_root)
+
         self.proc_runner.run(args, working_dir=str(self.project_root), env=env)
 
     def run_update_golden(self):
         golden_path = self.golden_edit.text().strip()
         reviewed_path = self.reviewed_edit.text().strip()
-        
+
         if not reviewed_path:
             QtWidgets.QMessageBox.critical(self, "Missing File", "Please choose a reviewed output file.")
             return
-        
+
         if not golden_path:
             golden_path = str(self.project_root / "reference" / "golden_doctors.xlsx")
             self.golden_edit.setText(golden_path)
@@ -545,13 +636,14 @@ class UniNameWidget(QtWidgets.QWidget):
         args = [exe, str(cli_script), "learn",
                 "--golden", golden_path,
                 "--reviewed", reviewed_path]
-                
+
         self.append_stdout("🚀 UPDATE GOLDEN COMMAND\n")
         self.append_stdout("🟢 Starting golden update...\n")
         self.append_stdout("=" * 50 + "\n")
-        
+
         env = os.environ.copy()
         env['PYTHONPATH'] = str(self.project_root)
+
         self.gold_runner.run(args, working_dir=str(self.project_root), env=env)
 
     def stop_running(self):
@@ -574,13 +666,13 @@ class UniNameWidget(QtWidgets.QWidget):
             if out_path and Path(out_path).exists():
                 df = pd.read_excel(out_path, sheet_name=0)
                 total = len(df)
-                
+
                 # Count unsure
                 for col in ["Not_Sure", "Unsure", "Manual_Review"]:
                     if col in df.columns:
                         unsure = int((df[col].astype(str) == "Not Sure").sum())
                         break
-                
+
                 # Count changed
                 for col in ["Name_Changed", "Changed", "Renamed"]:
                     if col in df.columns:
